@@ -178,4 +178,48 @@ public class ScoreSheetActivity extends ProgressIndicatorActivity {
     ScoreSheetBuilder getScoreSheetBuilder() {
         return mScoreSheetBuilder;
     }
+
+    private void saveGameJsonAlongsidePdf() {
+        try {
+            String baseName = mScoreSheetBuilder.getFilename();
+            if (baseName == null || baseName.isEmpty()) baseName = "match";
+            String jsonName = baseName.replace(".html", ".json");
+
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            String json = gson.toJson(mStoredGame);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Downloads.DISPLAY_NAME, jsonName);
+                values.put(MediaStore.Downloads.MIME_TYPE, "application/json");
+                values.put(MediaStore.Downloads.IS_PENDING, 1);
+
+                android.net.Uri uri = getContentResolver()
+                        .insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                if (uri != null) {
+                    try (OutputStream os = getContentResolver().openOutputStream(uri)) {
+                        if (os != null) {
+                            os.write(json.getBytes(StandardCharsets.UTF_8));
+                            os.flush();
+                        }
+                    }
+                    values.clear();
+                    values.put(MediaStore.Downloads.IS_PENDING, 0);
+                    getContentResolver().update(uri, values, null, null);
+                }
+            } else {
+                java.io.File dir = getExternalFilesDir(android.os.Environment.DIRECTORY_DOCUMENTS);
+                if (dir != null && (dir.exists() || dir.mkdirs())) {
+                    java.io.File out = new java.io.File(dir, jsonName);
+                    try (java.io.FileOutputStream fos = new java.io.FileOutputStream(out)) {
+                        fos.write(json.getBytes(StandardCharsets.UTF_8));
+                        fos.flush();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.w(com.tonkar.volleyballreferee.engine.Tags.SCORE_SHEET, "Failed to save JSON copy", e);
+        }
+    }
+
 }

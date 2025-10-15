@@ -1,6 +1,7 @@
 package com.tonkar.volleyballreferee.engine.database;
 
 import androidx.room.*;
+import androidx.room.RoomWarnings;
 
 import com.tonkar.volleyballreferee.engine.api.model.GameSummaryDto;
 import com.tonkar.volleyballreferee.engine.database.model.GameEntity;
@@ -11,6 +12,7 @@ import java.util.*;
 public interface GameDao {
 
     @Query("SELECT id, createdBy, createdAt, updatedAt, synced, scheduledAt, kind, gender, usage, leagueName, divisionName, homeTeamName, guestTeamName, homeSets, guestSets, score FROM games ORDER BY scheduledAt DESC")
+    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     List<GameSummaryDto> listGames();
 
     @Query("SELECT content FROM games WHERE id = :id")
