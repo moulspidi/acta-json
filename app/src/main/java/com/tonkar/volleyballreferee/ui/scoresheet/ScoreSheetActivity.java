@@ -11,6 +11,12 @@ import android.provider.MediaStore;
 import android.util.*;
 import android.view.MenuItem;
 import android.webkit.WebView;
+import java.nio.charset.StandardCharsets;
+import java.io.OutputStream;
+import com.google.gson.GsonBuilder;
+import com.google.gson.Gson;
+import android.os.Build;
+import android.content.ContentValues;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
