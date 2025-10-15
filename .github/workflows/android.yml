@@ -1,0 +1,52 @@
+# .github/workflows/android-debug.yml
+name: Android Debug APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-debug:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: volleyball-referee-android-app-4.2.0
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      # Instala el Android SDK (cmdline) y acepta licencias
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept SDK licenses & install build tools (opcional si ya están)
+        run: |
+          sdkmanager --licenses <<< "y"
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      # Cache inteligente de Gradle (más rápido que cache manual)
+      - name: Gradle Build Action cache
+        uses: gradle/gradle-build-action@v3
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Assemble Debug
+        run: ./gradlew --no-daemon clean :app:assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-${{ github.sha }}
+          path: volleyball-referee-android-app-4.2.0/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
