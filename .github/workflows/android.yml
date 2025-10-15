@@ -1,35 +1,68 @@
-- name: Set up JDK 17
-  uses: actions/setup-java@v4
-  with:
-    distribution: temurin
-    java-version: "17"
-    cache: gradle
+# .github/workflows/android-debug.yml
+name: Android Debug APK
 
-- name: Set up Android SDK
-  uses: android-actions/setup-android@v3
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
 
-- name: Accept SDK licenses (quiet)
-  shell: bash
-  run: |
-    set -o pipefail
-    yes | sdkmanager --licenses > /dev/null
-    if [[ ${PIPESTATUS[1]} -ne 0 ]]; then
-      echo "sdkmanager --licenses failed"; exit 1
-    fi
+jobs:
+  build-debug:
+    runs-on: ubuntu-latest
 
-- name: Install SDK components
-  run: |
-    sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-- name: Make gradlew executable
-  run: chmod +x gradlew
+      - name: Show workspace layout (debug)
+        run: |
+          pwd
+          ls -la
+          echo "----- app -----"
+          ls -la app || true
 
-- name: Assemble Debug
-  run: ./gradlew --no-daemon clean :app:assembleDebug
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
 
-- name: Upload debug APK
-  uses: actions/upload-artifact@v4
-  with:
-    name: app-debug-${{ github.sha }}
-    path: app/build/outputs/apk/debug/*.apk
-    if-no-files-found: error
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      # Aceptar licencias SIN tubería (no Broken pipe) y en silencio
+      - name: Accept SDK licenses (silent)
+        shell: bash
+        run: |
+          sdkmanager --licenses >/dev/null 2>&1 <<'EOF'
+          y
+          y
+          y
+          y
+          y
+          y
+          y
+          y
+          y
+          y
+          EOF
+
+      # Ajusta estas versiones a tu compileSdk/buildTools si difieren
+      - name: Install SDK components
+        run: |
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Assemble Debug
+        run: ./gradlew --no-daemon clean :app:assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-${{ github.sha }}
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
